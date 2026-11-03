@@ -1,0 +1,11 @@
+services:
+  prearrival-reader:
+    build: .
+    container_name: prearrival-reader
+    restart: unless-stopped
+    volumes:
+      - ./.env:/app/.env:ro
+      - reader-data:/data
+
+volumes:
+  reader-data:

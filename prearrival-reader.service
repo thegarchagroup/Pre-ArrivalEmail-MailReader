@@ -1,0 +1,16 @@
+[Unit]
+Description=Pre-arrival email reader (hourly send + reply check)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Change the user and folder if yours are different
+User=garchaai
+WorkingDirectory=/home/garchaai/apps/pre-arrval-email-reader
+ExecStart=/home/garchaai/apps/pre-arrval-email-reader/.venv/bin/python main.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

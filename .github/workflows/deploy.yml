@@ -1,0 +1,30 @@
+name: Deploy Pre-Arrival Mail Reader to AI Server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build .env from repo secrets
+        env:
+          ALL_SECRETS: ${{ toJSON(secrets) }}
+        run: |
+          echo "$ALL_SECRETS" | jq -r 'to_entries[] | select(.key | test("^(SERVER_HOST|SERVER_USER|SERVER_SSH_KEY|github_token)$") | not) | "\(.key)=\(.value)"' > app.env
+          echo "Variables being deployed:"
+          cut -d= -f1 app.env
+
+      - name: Deploy over SSH
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" deploy < app.env
