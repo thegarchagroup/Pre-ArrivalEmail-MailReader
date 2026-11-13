@@ -37,16 +37,17 @@ ADMIN_USERNAME = (os.getenv("PREARRIVAL_API_USERNAME") or "").strip()
 ADMIN_PASSWORD = os.getenv("PREARRIVAL_API_PASSWORD") or ""
 
 # ---------------------------------------------------------------- what the job does
-DAYS_AHEAD = _int("DAYS_AHEAD", 3)                  # today + 3 days: 02 -> 02, 03, 04, 05
+# Guests arriving from tomorrow, for 3 days: on 13 Nov -> 14, 15, 16 Nov. Today's arrivals are never emailed.
+DAYS_AHEAD = _int("DAYS_AHEAD", 3)                  # how many days
+START_DAYS_AHEAD = _int("START_DAYS_AHEAD", 1)      # 1 = start tomorrow
 MAX_SEND_ATTEMPTS = _int("MAX_SEND_ATTEMPTS", 3)    # failed emails are retried up to this many times
 SEND_PAUSE_SECONDS = _int("SEND_PAUSE_SECONDS", 2)  # gap between emails, to stay under mail-server limits
 SEND_EVERY_MINUTES = _int("SEND_EVERY_MINUTES", _int("RUN_EVERY_MINUTES", 60))  # sends on the hour: 09:00, 10:00 ...
 CHECK_MAIL_EVERY_MINUTES = _int("CHECK_MAIL_EVERY_MINUTES", 5)                   # mailbox: 09:00, 09:05, 09:10 ...
 RUN_EVERY_MINUTES = SEND_EVERY_MINUTES   # older name, kept so existing .env files still work
 
-DATA_DIR = Path(os.getenv("DATA_DIR") or BASE_DIR)    # /data in Docker; this folder otherwise
-STATE_FILE = DATA_DIR / "reader_state.json"         # last email read in each inbox
-LOG_FILE = DATA_DIR / "reader.log"
+STATE_FILE = BASE_DIR / "reader_state.json"         # last email read in each inbox
+LOG_FILE = BASE_DIR / "reader.log"
 
 
 # ---------------------------------------------------------------- hotels

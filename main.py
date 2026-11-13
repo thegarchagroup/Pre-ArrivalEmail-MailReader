@@ -2,8 +2,9 @@
 Pre-arrival email service (Singapore time).
 
 Every hour, on the hour, for all three hotels:
-  1. Sends the pre-arrival email to guests arriving today .. today + 3 days
-     who haven't had it yet (e.g. on 02 Nov: guests arriving 02, 03, 04 and 05 Nov).
+  1. Sends the pre-arrival email to guests arriving in the next 3 days, starting tomorrow,
+     who haven't had it yet (e.g. on 13 Nov: guests arriving 14, 15 and 16 Nov).
+     Guests arriving today are never emailed.
 
 Every 5 minutes:
   2. Reads each hotel mailbox (read-only, nothing marked as read): guests' emails and
@@ -26,7 +27,7 @@ from logging.handlers import RotatingFileHandler
 from services.api_client import ApiError, PrearrivalApi
 from services.read_replies import load_state, read_replies
 from services.send_due_emails import send_due_emails
-from settings import CHECK_MAIL_EVERY_MINUTES, DAYS_AHEAD, HOTELS, LOG_FILE, SEND_EVERY_MINUTES, SGT
+from settings import CHECK_MAIL_EVERY_MINUTES, DAYS_AHEAD, HOTELS, LOG_FILE, SEND_EVERY_MINUTES, SGT, START_DAYS_AHEAD
 
 log = logging.getLogger("reader")
 
@@ -50,7 +51,8 @@ def run_once(dry_run=False, send=True, read=True):
     tag = " (DRY RUN: nothing is sent or changed)" if dry_run else ""
     if send:
         log.info("=" * 70)
-        log.info("Run started%s. Arrivals %s to %s", tag, today, today + timedelta(days=DAYS_AHEAD))
+        first = today + timedelta(days=START_DAYS_AHEAD)
+        log.info("Run started%s. Arrivals %s to %s", tag, first, first + timedelta(days=DAYS_AHEAD - 1))
 
     apis = {}   # one login per set of credentials
 

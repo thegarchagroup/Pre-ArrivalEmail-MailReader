@@ -1,5 +1,6 @@
 """
-Step 1: send the pre-arrival email to every guest arriving today .. today + DAYS_AHEAD
+Step 1: send the pre-arrival email to every guest arriving tomorrow .. today + DAYS_AHEAD
+(on 13 Nov: 14, 15 and 16 Nov). Guests arriving today are never emailed.
 who hasn't had it yet.
 
     "To send"  -> sent now
@@ -12,14 +13,15 @@ import time
 from datetime import timedelta
 
 from services.api_client import ApiError
-from settings import DAYS_AHEAD, MAX_SEND_ATTEMPTS, SEND_PAUSE_SECONDS
+from settings import DAYS_AHEAD, MAX_SEND_ATTEMPTS, SEND_PAUSE_SECONDS, START_DAYS_AHEAD
 
 log = logging.getLogger("reader")
 
 
 def send_due_emails(api, hotel, today, dry_run=False):
     summary = {"sent": 0, "failed": 0, "skipped": 0, "gave_up": 0}
-    last_day = today + timedelta(days=DAYS_AHEAD)
+    first_day = today + timedelta(days=START_DAYS_AHEAD)     # tomorrow: today's arrivals aren't emailed
+    last_day = first_day + timedelta(days=DAYS_AHEAD - 1)
 
     try:
         template = api.template(hotel.code)
@@ -34,7 +36,7 @@ def send_due_emails(api, hotel, today, dry_run=False):
 
     guests = []
     for status in ("pending", "failed"):
-        guests += api.arrivals(hotel=hotel.code, date_from=today.isoformat(),
+        guests += api.arrivals(hotel=hotel.code, date_from=first_day.isoformat(),
                                date_to=last_day.isoformat(), email_status=status, limit=5000)
 
     due = []
@@ -51,9 +53,9 @@ def send_due_emails(api, hotel, today, dry_run=False):
         log.info("%s: %d guest(s) failed %d times and are left for staff (see Emails due)",
                  hotel.name, summary["gave_up"], MAX_SEND_ATTEMPTS)
     if not due:
-        log.info("%s: no emails due for %s to %s", hotel.name, today, last_day)
+        log.info("%s: no emails due for %s to %s", hotel.name, first_day, last_day)
         return summary
-    log.info("%s: %d email(s) due for %s to %s", hotel.name, len(due), today, last_day)
+    log.info("%s: %d email(s) due for %s to %s", hotel.name, len(due), first_day, last_day)
 
     for n, g in enumerate(due, start=1):
         who = f"{g['first_name']} {g['last_name']} <{g['email']}> arriving {g['check_in']}"
